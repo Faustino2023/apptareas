@@ -1,69 +1,144 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
+}
+
+class Task {
+  String title;
+  bool isDone;
+
+  Task({required this.title, this.isDone = false});
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: TaskScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
+class TaskScreen extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _TaskScreenState createState() => _TaskScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+class _TaskScreenState extends State<TaskScreen> {
+  List<Task> tasks = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: Text('Tareas'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Expanded(
+            child: TaskList(tasks: tasks, onToggle: toggleTask),
+          ),
+          TaskInput(onAddTask: addTask),
+        ],
+      ),
+    );
+  }
+
+  void addTask(String newTaskTitle) {
+    setState(() {
+      tasks.add(Task(title: newTaskTitle));
+    });
+  }
+
+  void toggleTask(int index) {
+    setState(() {
+      tasks[index].isDone = !tasks[index].isDone;
+    });
+  }
+}
+
+class TaskList extends StatelessWidget {
+  final List<Task> tasks;
+  final Function(int) onToggle;
+
+  TaskList({required this.tasks, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: tasks.length,
+      itemBuilder: (context, index) {
+        final task = tasks[index];
+        return TaskTile(
+          title: task.title,
+          isDone: task.isDone,
+          onToggle: () {
+            onToggle(index);
+          },
+        );
+      },
+    );
+  }
+}
+
+class TaskTile extends StatelessWidget {
+  final String title;
+  final bool isDone;
+  final VoidCallback onToggle;
+
+  TaskTile({required this.title, required this.isDone, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text(
+        title,
+        style: TextStyle(
+          decoration: isDone ? TextDecoration.lineThrough : null,
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      trailing: Checkbox(
+        value: isDone,
+        onChanged: (newValue) {
+          onToggle();
+        },
+      ),
+    );
+  }
+}
+
+class TaskInput extends StatelessWidget {
+  final Function(String) onAddTask;
+
+  TaskInput({required this.onAddTask});
+
+  @override
+  Widget build(BuildContext context) {
+    String newTaskTitle = '';
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: TextField(
+              onChanged: (value) {
+                newTaskTitle = value;
+              },
+              decoration: InputDecoration(
+                hintText: 'Ingrese una nueva tarea',
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              onAddTask(newTaskTitle);
+            },
+            child: Text('Agregar'),
+          ),
+        ],
       ),
     );
   }
